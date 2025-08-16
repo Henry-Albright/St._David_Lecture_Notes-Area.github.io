@@ -115,7 +115,7 @@ function generateVerificationCode() {
 function sendVerificationEmail(email) {
     // In a real application, this would send an actual email
     console.log(`Verification code for ${email}: ${verificationCode}`);
-    showNotification(`Verification code sent to ${email}. For demo: ${verificationCode}`, 'success', true);
+    showNotification(`Verification code sent to ${email}. You Here. Write this code as your verification code; Do not Share with anyone!: ${verificationCode}`, 'success', true);
 }
 
 // Resend verification code
