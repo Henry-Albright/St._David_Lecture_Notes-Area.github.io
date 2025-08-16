@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="NOTES.css">
+</head>
+<body>
+    <!-- Sign Up Page -->
+    <div id="signup-page" class="signup-page">
+        <div class="signup-container">
+            <h1>Welcome</h1>
+            <p class="subtitle">Join Saint David Higher Institute</p>
+            
+            <form class="signup-form" onsubmit="handleSignUp(event)">
+                <input type="text" id="fullName" placeholder="Full Name" required>
+                <input type="email" id="email" placeholder="Email Address" required>
+                
+                <div class="password-container">
+                    <input type="password" id="password" placeholder="Password" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword('password')">👁</button>
+                </div>
+                
+                <div class="password-container">
+                    <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">👁</button>
+                </div>
+                
+                <!-- Email Verification Section (initially hidden) -->
+                <div id="email-verification" class="email-verification" style="display: none;">
+                    <h3>📧 Verify Your Email</h3>
+                    <p>We've sent a verification code to your email address. Please enter the 6-digit code below:</p>
+                    <input type="text" id="verification-code" class="verification-code-input" placeholder="000000" maxlength="6" pattern="[0-9]{6}">
+                    <br>
+                    <span class="resend-code" onclick="resendVerificationCode()">Didn't receive code? Resend</span>
+                </div>
+                
+                <div class="role-selection">
+                    <div class="role-option" onclick="selectRole('student')" id="student-role">
+                        <div class="role-icon">🎓</div>
+                        <div class="role-title">Student</div>
+                    </div>
+                    <div class="role-option" onclick="selectRole('lecturer')" id="lecturer-role">
+                        <div class="role-icon">👨‍🏫</div>
+                        <div class="role-title">Lecturer</div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="signup-btn" id="signup-submit">
+                    Create Account
+                </button>
+            </form>
+            
+            <div class="login-link">
+                Already have an account? <a href="#" onclick="showLogin()">Sign In</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign In Page -->
+    <div id="signin-page" class="signin-page">
+        <div class="signin-container">
+            <h1>Welcome Back</h1>
+            <p class="subtitle">Sign in to Saint David Higher Institute</p>
+            
+            <form class="signin-form" onsubmit="handleSignIn(event)">
+                <input type="email" id="signin-email" placeholder="Email Address" required>
+                
+                <div class="password-container">
+                    <input type="password" id="signin-password" placeholder="Password" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword('signin-password')">👁</button>
+                </div>
+                
+                <button type="submit" class="signin-btn" id="signin-submit">
+                    Sign In
+                </button>
+            </form>
+            
+            <div class="signup-link">
+                Don't have an account? <a href="#" onclick="showSignup()">Create Account</a>
+            </div>
+        </div>
+    </div>
+    <div id="main-app" class="main-app">
+        <div class="container">
+            <header>
+                <h1>Saint David Higher Institute</h1>
+                <p>Nursing and Biomedical Sciences - Lecture Notes Portal</p>
+                <div style="margin-top: 15px;">
+                    <span style="color: #2c3e50; font-weight: 700;">Welcome, <span id="user-name"></span>!</span>
+                    <button onclick="logout()" style="margin-left: 20px; padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+                </div>
+            </header>
+
+            <div class="mode-toggle">
+                <button class="mode-btn active" onclick="showSection('student')">Student Portal</button>
+                <button class="mode-btn" onclick="showSection('results')">My Results</button>
+                <button class="mode-btn" onclick="showSection('lecturer')">Lecturer Portal</button>
+            </div>
+
+        <!-- Student Section -->
+        <div id="student-section" class="section active">
+            <h2>Available Courses</h2>
+            <div class="search-bar">
+                <input type="text" id="search" class="search-input" placeholder="Search for courses..." onkeyup="searchCourses()">
+            </div>
+            <div id="courses-container" class="courses-grid">
+                <!-- Courses will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="section">
+            <h2>My Test Results</h2>
+            <div id="student-results-container" class="courses-grid">
+                <!-- Student results will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Lecturer Section -->
+        <div id="lecturer-section" class="section">
+            <h2>Upload Course Materials</h2>
+            <div class="upload-form">
+                <div class="form-group">
+                    <label for="course-title">Course Title</label>
+                    <input type="text" id="course-title" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="lecturer-name">Lecturer Name</label>
+                    <input type="text" id="lecturer-name" value="Henry Albright" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="course-level">Course Level</label>
+                    <select id="course-level" required>
+                        <option value="">Select Level</option>
+                        <option value="Year 1">Year 1</option>
+                        <option value="Year 2">Year 2</option>
+                        <option value="Year 3">Year 3</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="course-description">Course Description</label>
+                    <textarea id="course-description" placeholder="Provide a detailed description of the course content..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Course Materials (PDF, DOC, PPT, etc.)</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="course-file" class="file-input" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar" required>
+                        <label for="course-file" class="file-input-label">
+                            📁 Choose Files to Upload
+                        </label>
+                    </div>
+                    <div id="file-list" style="margin-top: 10px; color: #666;"></div>
+                </div>
+
+                <button type="button" class="submit-btn" onclick="uploadCourse()">
+                    📚 Upload Course
+                </button>
+            </div>
+
+            <!-- Test Results Upload Section -->
+            <div style="margin-top: 50px;">
+                <h2>Upload Test Results</h2>
+                <div class="upload-form">
+                    <div class="form-group">
+                        <label for="test-title">Test Title</label>
+                        <input type="text" id="test-title" placeholder="e.g., Continuous Assessment or Exam" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="test-course">Course</label>
+                        <input type="text" id="test-course" placeholder="e.g., Computer For Business 1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="test-level">Level</label>
+                        <select id="test-level" required>
+                            <option value="">Select Level</option>
+                            <option value="Year 1">Year 1</option>
+                            <option value="Year 2">Year 2</option>
+                            <option value="Year 3">Year 3</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="results-data">Student Results (CSV format or manual entry)</label>
+                        <textarea id="results-data" placeholder="Format: Student Email, Score, Grade, Comments (optional)&#10;example@email.com, 85, A, Excellent work&#10;student2@email.com, 72, B, Good performance" rows="8" required></textarea>
+                        <small style="color: #666; font-size: 0.9em;">Enter one student result per line. Format: email, score, grade, comments</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="test-date">Test Date</label>
+                        <input type="date" id="test-date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="max-score">Maximum Score</label>
+                        <input type="number" id="max-score" placeholder="100" required>
+                    </div>
+
+                    <button type="button" class="submit-btn" onclick="uploadTestResults()">
+                        📊 Upload Test Results
+                    </button>
+                </div>
+            </div>
+
+            <div style="margin-top: 50px;">
+                <h2>Manage Uploaded Courses</h2>
+                <div id="manage-courses-container" class="courses-grid">
+                    <!-- Management interface will be loaded here -->
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h2>Manage Test Results</h2>
+                <div id="manage-results-container" class="courses-grid">
+                    <!-- Test results management will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    <script src="NOTES.js"></script>
+</body>
+</html>
