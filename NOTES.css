@@ -764,6 +764,10 @@ header p {
 }
 
 @media (max-width: 768px) {
+    .file-list{
+        display: block;
+        overflow: auto;
+    }
     .container {
         padding: 15px;
     }
