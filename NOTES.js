@@ -7,10 +7,33 @@ let selectedRole = null;
 let verificationCode = generateVerificationCode(); // Generate once when script loads
 let pendingUser = null;
 let activeNotification = null; // Track active notification
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     checkUserSession();
+    // Initialize file input handler for lecturer section
+    initializeFileInputHandler();
 });
+
+function initializeFileInputHandler() {
+    const fileInput = document.getElementById('course-file');
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            const files = this.files;
+            const fileList = document.getElementById('file-list');
+            
+            if (files.length > 0) {
+                let fileNames = [];
+                for (let i = 0; i < files.length; i++) {
+                    fileNames.push(files[i].name);
+                }
+                fileList.innerHTML = 'Selected files:<br>' + fileNames.join('<br>');
+            } else {
+                fileList.innerHTML = '';
+            }
+        });
+    }
+}
 
 // Check if user is already logged in
 function checkUserSession() {
@@ -88,14 +111,14 @@ function generateVerificationCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Send verification email (simulated) - modified to use the persistent code
+// Send verification email (simulated)
 function sendVerificationEmail(email) {
     // In a real application, this would send an actual email
     console.log(`Verification code for ${email}: ${verificationCode}`);
-    showNotification(`Verification code sent to ${email}. For demo: ${verificationCode}`, 'success');
+    showNotification(`Verification code sent to ${email}. For demo: ${verificationCode}`, 'success', true);
 }
 
-// Resend verification code - modified to use the same code
+// Resend verification code
 function resendVerificationCode() {
     if (pendingUser) {
         sendVerificationEmail(pendingUser.email);
@@ -106,19 +129,6 @@ function resendVerificationCode() {
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
-}
-
-// Check if email exists in common email providers (simulated)
-function checkEmailExists(email) {
-    // In a real application, this would check with actual email providers
-    // For demo purposes, we'll simulate this check
-    const commonDomains = [
-        'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com',
-        'icloud.com', 'aol.com', 'protonmail.com', 'yandex.com'
-    ];
-    
-    const domain = email.split('@')[1];
-    return commonDomains.includes(domain.toLowerCase());
 }
 
 // Select role during signup
@@ -134,7 +144,7 @@ function selectRole(role) {
     document.getElementById(role + '-role').classList.add('selected');
 }
 
-// Handle signup form submission - modified to not regenerate code
+// Handle signup form submission
 function handleSignUp(event) {
     event.preventDefault();
     
@@ -146,7 +156,33 @@ function handleSignUp(event) {
     
     // If email verification is not yet shown, validate and initiate verification
     if (document.getElementById('email-verification').style.display === 'none') {
-        // ... [keep all validation code the same until pendingUser creation]
+        // Validate inputs
+        if (!fullName || !email || !password || !confirmPassword || !selectedRole) {
+            showNotification('Please fill in all fields and select a role.', 'error');
+            return;
+        }
+        
+        if (password !== confirmPassword) {
+            showNotification('Passwords do not match.', 'error');
+            return;
+        }
+        
+        if (password.length < 6) {
+            showNotification('Password must be at least 6 characters long.', 'error');
+            return;
+        }
+        
+        if (!isValidEmail(email)) {
+            showNotification('Please enter a valid email address.', 'error');
+            return;
+        }
+        
+        // Check if email already exists
+        const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
+        if (existingUsers.some(user => user.email === email)) {
+            showNotification('An account with this email already exists.', 'error');
+            return;
+        }
         
         // Create pending user and start email verification
         pendingUser = {
@@ -158,28 +194,7 @@ function handleSignUp(event) {
             joinDate: new Date().toLocaleDateString()
         };
         
-        // Use the existing verification code instead of generating a new one
         sendVerificationEmail(email);
-        
-        // Show email verification section
-        document.getElementById('email-verification').style.display = 'block';
-        document.getElementById('signup-submit').textContent = 'Verify & Create Account';
-        
-        return;
-        
-        // Create pending user and start email verification
-        pendingUser = {
-            id: Date.now(),
-            name: fullName,
-            email: email,
-            password: password,
-            role: selectedRole,
-            joinDate: new Date().toLocaleDateString()
-        };
-        
-        // Generate and send verification code
-        verificationCode = generateVerificationCode();
-        sendVerificationEmail(email, verificationCode);
         
         // Show email verification section
         document.getElementById('email-verification').style.display = 'block';
@@ -210,7 +225,7 @@ function handleSignUp(event) {
     
     // Reset form and variables
     pendingUser = null;
-    verificationCode = null;
+    verificationCode = generateVerificationCode(); // Generate new code for next registration
     
     showNotification('Email verified! Account created successfully! Welcome to Saint David Institute!', 'success');
     
@@ -281,7 +296,7 @@ function showSignup() {
     
     // Reset pending user data
     pendingUser = null;
-    verificationCode = null;
+    verificationCode = generateVerificationCode();
     
     showSignupPage();
 }
@@ -312,8 +327,12 @@ function showSection(section) {
     currentSection = section;
     
     // Update button states
-    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick') === `showSection('${section}')`) {
+            btn.classList.add('active');
+        }
+    });
     
     // Hide all sections
     document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
@@ -329,27 +348,6 @@ function showSection(section) {
     } else if (section === 'lecturer') {
         displayManageCourses();
         displayManageResults();
-        // Initialize file input handler if not already done
-        setTimeout(() => {
-            const fileInput = document.getElementById('course-file');
-            if (fileInput && !fileInput._hasEventListener) {
-                fileInput._hasEventListener = true;
-                fileInput.addEventListener('change', function() {
-                    const files = this.files;
-                    const fileList = document.getElementById('file-list');
-                    
-                    if (files.length > 0) {
-                        let fileNames = [];
-                        for (let i = 0; i < files.length; i++) {
-                            fileNames.push(files[i].name);
-                        }
-                        fileList.innerHTML = 'Selected files:<br>' + fileNames.join('<br>');
-                    } else {
-                        fileList.innerHTML = '';
-                    }
-                });
-            }
-        }, 100);
     }
 }
 
@@ -411,11 +409,19 @@ function uploadCourse() {
         document.getElementById('course-title').value = '';
         document.getElementById('course-description').value = '';
         document.getElementById('course-level').value = '';
-        document.getElementById('course-file').value = '';
+        fileInput.value = '';
         document.getElementById('file-list').innerHTML = '';
         
         showNotification('Course uploaded successfully!', 'success');
         displayManageCourses();
+        
+        // If student is viewing courses, refresh their view
+        if (currentSection === 'student') {
+            displayCourses();
+        }
+    }).catch(error => {
+        console.error('Error processing files:', error);
+        showNotification('Error processing files. Please try again.', 'error');
     });
 }
 
@@ -503,7 +509,7 @@ function uploadTestResults() {
 function displayCourses() {
     const container = document.getElementById('courses-container');
     
-    if (courses.length === 0) {
+    if (!courses || courses.length === 0) {
         container.innerHTML = '<div class="no-courses-message">No courses available yet. Check back later!</div>';
         return;
     }
@@ -527,7 +533,7 @@ function displayCourses() {
                 <div class="course-files">
                     ${course.files.map((file, index) => `
                         <div class="file-item" onclick="downloadFile(${course.id}, ${index}, '${file.name.replace(/'/g, "\\'")}')">
-                            📄 ${file.name}
+                            📄 ${file.name} (${formatFileSize(file.size)})
                         </div>
                     `).join('')}
                 </div>
@@ -538,11 +544,20 @@ function displayCourses() {
     container.innerHTML = html;
 }
 
+// Format file size
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
 // Display courses for management
 function displayManageCourses() {
     const container = document.getElementById('manage-courses-container');
     
-    if (courses.length === 0) {
+    if (!courses || courses.length === 0) {
         container.innerHTML = '<div class="no-data-message">No courses uploaded yet.</div>';
         return;
     }
@@ -562,6 +577,13 @@ function displayManageCourses() {
                 </div>
                 <div class="course-description">
                     <p>${course.description}</p>
+                </div>
+                <div class="course-files">
+                    ${course.files.map(file => `
+                        <div class="file-item">
+                            📄 ${file.name} (${formatFileSize(file.size)})
+                        </div>
+                    `).join('')}
                 </div>
                 <div class="course-actions">
                     <button onclick="deleteCourse(${course.id})" class="delete-btn">
@@ -611,7 +633,13 @@ function downloadFile(courseId, fileIndex, fileName) {
     // Update download count
     course.downloads++;
     saveCourses();
-    displayCourses();
+    
+    // Refresh both student and lecturer views if they're active
+    if (currentSection === 'student') {
+        displayCourses();
+    } else if (currentSection === 'lecturer') {
+        displayManageCourses();
+    }
     
     showNotification(`Downloaded: ${fileName}`, 'success');
 }
@@ -622,6 +650,12 @@ function deleteCourse(courseId) {
         courses = courses.filter(course => course.id !== courseId);
         saveCourses();
         displayManageCourses();
+        
+        // If student is viewing courses, refresh their view
+        if (currentSection === 'student') {
+            displayCourses();
+        }
+        
         showNotification('Course deleted successfully!', 'success');
     }
 }
@@ -629,28 +663,7 @@ function deleteCourse(courseId) {
 // Save courses to local storage
 function saveCourses() {
     try {
-        const coursesData = JSON.stringify(courses);
-        // Split large data into chunks to avoid localStorage limits
-        const chunkSize = 1000000; // 1MB chunks
-        const chunks = [];
-        
-        for (let i = 0; i < coursesData.length; i += chunkSize) {
-            chunks.push(coursesData.slice(i, i + chunkSize));
-        }
-        
-        // Clear existing chunks
-        Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('courses_chunk_')) {
-                localStorage.removeItem(key);
-            }
-        });
-        
-        // Save new chunks
-        chunks.forEach((chunk, index) => {
-            localStorage.setItem(`courses_chunk_${index}`, chunk);
-        });
-        
-        localStorage.setItem('courses_chunk_count', chunks.length.toString());
+        localStorage.setItem('courses', JSON.stringify(courses));
     } catch (e) {
         console.error('Error saving courses:', e);
         showNotification('Error saving course. Storage might be full.', 'error');
@@ -660,19 +673,9 @@ function saveCourses() {
 // Load courses from local storage
 function loadCourses() {
     try {
-        const chunkCount = parseInt(localStorage.getItem('courses_chunk_count') || '0');
-        if (chunkCount === 0) {
-            courses = [];
-            return;
-        }
-        
-        let coursesData = '';
-        for (let i = 0; i < chunkCount; i++) {
-            coursesData += localStorage.getItem(`courses_chunk_${i}`) || '';
-        }
-        
-        if (coursesData) {
-            courses = JSON.parse(coursesData);
+        const savedCourses = localStorage.getItem('courses');
+        if (savedCourses) {
+            courses = JSON.parse(savedCourses);
         } else {
             courses = [];
         }
@@ -685,19 +688,9 @@ function loadCourses() {
 // Load test results from local storage
 function loadTestResults() {
     try {
-        const chunkCount = parseInt(localStorage.getItem('testResults_chunk_count') || '0');
-        if (chunkCount === 0) {
-            testResults = [];
-            return;
-        }
-        
-        let testResultsData = '';
-        for (let i = 0; i < chunkCount; i++) {
-            testResultsData += localStorage.getItem(`testResults_chunk_${i}`) || '';
-        }
-        
-        if (testResultsData) {
-            testResults = JSON.parse(testResultsData);
+        const savedResults = localStorage.getItem('testResults');
+        if (savedResults) {
+            testResults = JSON.parse(savedResults);
         } else {
             testResults = [];
         }
@@ -710,27 +703,7 @@ function loadTestResults() {
 // Save test results to local storage
 function saveTestResults() {
     try {
-        const testResultsData = JSON.stringify(testResults);
-        const chunkSize = 1000000; // 1MB chunks
-        const chunks = [];
-        
-        for (let i = 0; i < testResultsData.length; i += chunkSize) {
-            chunks.push(testResultsData.slice(i, i + chunkSize));
-        }
-        
-        // Clear existing chunks
-        Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('testResults_chunk_')) {
-                localStorage.removeItem(key);
-            }
-        });
-        
-        // Save new chunks
-        chunks.forEach((chunk, index) => {
-            localStorage.setItem(`testResults_chunk_${index}`, chunk);
-        });
-        
-        localStorage.setItem('testResults_chunk_count', chunks.length.toString());
+        localStorage.setItem('testResults', JSON.stringify(testResults));
     } catch (e) {
         console.error('Error saving test results:', e);
         showNotification('Error saving test results. Storage might be full.', 'error');
@@ -741,7 +714,7 @@ function saveTestResults() {
 function displayManageResults() {
     const container = document.getElementById('manage-results-container');
     
-    if (testResults.length === 0) {
+    if (!testResults || testResults.length === 0) {
         container.innerHTML = '<div class="no-data-message">No test results uploaded yet.</div>';
         return;
     }
@@ -838,7 +811,7 @@ function displayStudentResults() {
     }
 }
 
-// Show notification (modified to stay on screen)
+// Show notification
 function showNotification(message, type, persistent = false) {
     // Remove existing notification if any
     if (activeNotification) {
@@ -877,15 +850,4 @@ function dismissNotification() {
             activeNotification = null;
         }, 300);
     }
-}
-
-// Send verification email (modified to show persistent notification)
-function sendVerificationEmail(email) {
-    // In a real application, this would send an actual email
-    console.log(`Verification code for ${email}: ${verificationCode}`);
-    showNotification(
-        `Verification code sent to ${email}. For demo: <strong>${verificationCode}</strong>`,
-        'success',
-        true // Make it persistent
-    );
 }
